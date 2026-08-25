@@ -429,9 +429,14 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
+            var showLaunchUpdateDialog by rememberSaveable { mutableStateOf(false) }
+
             LaunchedEffect(Unit) {
-                Updater.getLatestVersionName().onSuccess {
-                    latestVersionName = it
+                Updater.getLatestVersionName().onSuccess { version ->
+                    latestVersionName = version
+                    if (com.bt.bttune.ui.screens.settings.isNewerVersion(version, BuildConfig.VERSION_NAME)) {
+                        showLaunchUpdateDialog = true
+                    }
                 }
             }
 
@@ -1599,6 +1604,13 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                     }
+                                }
+
+                                if (showLaunchUpdateDialog) {
+                                    com.bt.bttune.ui.screens.settings.UpdateDownloadDialog(
+                                        latestVersion = latestVersionName,
+                                        onDismiss = { showLaunchUpdateDialog = false }
+                                    )
                                 }
                             }
 

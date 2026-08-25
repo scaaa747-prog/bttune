@@ -627,7 +627,8 @@ fun UpdateDownloadDialog(
                             WaterDropButton(
                                 onClick = {
                                     downloadStatus = DownloadStatus.REDIRECTING
-                                    val downloadUrl = "https://github.com/scaaa747-prog/test/releases/download/latest/BTTUNE-release.apk"
+                                    val cleanTag = if (latestVersion.startsWith("v")) latestVersion else "v$latestVersion"
+                                    val downloadUrl = "https://github.com/scaaa747-prog/test/releases/download/$cleanTag/BTTUNE-release.apk"
                                     uriHandler.openUri(downloadUrl)
                                     downloadStatus = DownloadStatus.COMPLETED
                                     onDismiss()
