@@ -1,0 +1,159 @@
+name: Build & Release BTTUNE (Android APK & Windows EXE)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version_tag: ${{ steps.version_step.outputs.VERSION_TAG }}
+      version_name: ${{ steps.version_step.outputs.VERSION_NAME }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Setup Gradle Cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Create Consistent Release Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore app/bttune.keystore \
+            -alias debug \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass bttuneapppass \
+            -keypass bttuneapppass \
+            -dname "CN=BTTUNE, OU=Music, O=BTTUNE, L=City, ST=State, C=IN"
+
+      - name: Build Release APK
+        env:
+          MUSIC_DEBUG_SIGNING_STORE_PASSWORD: "bttuneapppass"
+          MUSIC_DEBUG_KEYSTORE_FILE: "bttune.keystore"
+          MUSIC_DEBUG_SIGNING_KEY_PASSWORD: "bttuneapppass"
+        run: ./gradlew assembleRelease --build-cache --parallel --no-daemon
+
+      - name: Prepare Single Clean Release APK
+        id: version_step
+        run: |
+          mkdir -p release-output
+          
+          # Use primary lightweight ARM64 APK (8.2MB) as the clean single BTTUNE-release.apk
+          if ls app/build/outputs/apk/release/*arm64-v8a*.apk 1> /dev/null 2>&1; then
+            cp app/build/outputs/apk/release/*arm64-v8a*.apk release-output/BTTUNE-release.apk
+          else
+            cp app/build/outputs/apk/release/*.apk release-output/BTTUNE-release.apk
+          fi
+          
+          ls -lh release-output/
+          
+          VERSION_NAME=$(grep 'versionName =' app/build.gradle.kts | head -n 1 | cut -d'"' -f2)
+          echo "VERSION_TAG=v${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Upload Clean Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BTTUNE-release-apk
+          path: release-output/BTTUNE-release.apk
+
+  build-windows-exe:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    needs: build-android
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Desktop Dependencies
+        working-directory: ./desktop
+        run: npm install
+
+      - name: Build Windows .EXE Installer & Standalone
+        working-directory: ./desktop
+        run: npm run dist
+
+      - name: Upload Windows EXE Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BTTUNE-Windows-EXE
+          path: desktop/dist/BTTUNE-Setup-*.exe
+
+  publish-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [build-android, build-windows-exe]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: BTTUNE-release-apk
+          path: release-assets
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: BTTUNE-Windows-EXE
+          path: release-assets
+
+      - name: Rename & Organize Release Files
+        run: |
+          cd release-assets
+          # Find and clean installer exe name
+          if ls BTTUNE-Setup-*.exe 1> /dev/null 2>&1; then
+            mv BTTUNE-Setup-*.exe BTTUNE-Setup.exe
+          elif ls *.exe 1> /dev/null 2>&1; then
+            mv *.exe BTTUNE-Setup.exe
+          fi
+          ls -lh
+
+      - name: Publish All to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build-android.outputs.version_tag }}
+          name: "BTTUNE ${{ needs.build-android.outputs.version_name }}"
+          body: |
+            ### 🎵 BTTUNE - Modern Music Streaming (Android & Windows)
+            
+            - **Android APK**: Ultra-lightweight ~8.2 MB (`BTTUNE-release.apk`)
+            - **Windows EXE**: Setup Installer for PC (`BTTUNE-Setup.exe`) with Medium Quality Smart Audio Cache
+            - **Seamless Experience**: Same Liquid Glass UI and fast playback
+          draft: false
+          prerelease: false
+          files: |
+            release-assets/BTTUNE-release.apk
+            release-assets/BTTUNE-Setup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

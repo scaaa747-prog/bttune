@@ -1,0 +1,41 @@
+{
+  "name": "bttune-desktop",
+  "version": "6.0.1",
+  "description": "BTTUNE Modern Music Streaming for Windows Desktop",
+  "main": "main.js",
+  "author": "BTTUNE Team",
+  "license": "GPL-3.0",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "devDependencies": {
+    "electron": "^31.3.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.bt.bttune.desktop",
+    "productName": "BTTUNE",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BTTUNE",
+      "artifactName": "BTTUNE-Setup-${version}.${ext}"
+    }
+  }
+}
