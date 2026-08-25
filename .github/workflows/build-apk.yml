@@ -1,4 +1,4 @@
-name: Build & Release BTTUNE (Windows EXE)
+name: Build & Release BTTUNE APK
 
 on:
   push:
@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-windows-exe:
-    runs-on: windows-latest
+  build:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
 
@@ -19,49 +19,77 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8 SDK
-        uses: actions/setup-dotnet@v4
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
         with:
-          dotnet-version: '8.0.x'
+          distribution: 'zulu'
+          java-version: '21'
 
-      - name: Build Ultra-Lightweight Native Windows EXE (~3-5MB)
-        working-directory: ./desktop
+      - name: Setup Gradle Cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Grant Execute Permission for Gradlew
+        run: chmod +x gradlew
+
+      - name: Create Consistent Release Keystore
         run: |
-          dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o ../windows-output
+          keytool -genkey -v \
+            -keystore app/bttune.keystore \
+            -alias debug \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass bttuneapppass \
+            -keypass bttuneapppass \
+            -dname "CN=BTTUNE, OU=Music, O=BTTUNE, L=City, ST=State, C=IN"
 
-      - name: Extract Version
+      - name: Build Release APK
+        env:
+          MUSIC_DEBUG_SIGNING_STORE_PASSWORD: "bttuneapppass"
+          MUSIC_DEBUG_KEYSTORE_FILE: "bttune.keystore"
+          MUSIC_DEBUG_SIGNING_KEY_PASSWORD: "bttuneapppass"
+        run: ./gradlew assembleRelease --build-cache --parallel --no-daemon
+
+      - name: Prepare Single Clean Release APK
         id: version_step
-        shell: pwsh
         run: |
-          $version = Select-String -Path app/build.gradle.kts -Pattern 'versionName = "(.*)"' | ForEach-Object { $_.Matches.Groups[1].Value }
-          echo "VERSION_TAG=v$version" >> $env:GITHUB_OUTPUT
-          echo "VERSION_NAME=$version" >> $env:GITHUB_OUTPUT
+          mkdir -p release-output
+          
+          # Single lightweight optimized ARM64 APK (8.2MB)
+          if ls app/build/outputs/apk/release/*arm64-v8a*.apk 1> /dev/null 2>&1; then
+            cp app/build/outputs/apk/release/*arm64-v8a*.apk release-output/BTTUNE-release.apk
+          else
+            cp app/build/outputs/apk/release/*.apk release-output/BTTUNE-release.apk
+          fi
+          
+          ls -lh release-output/
+          
+          VERSION_NAME=$(grep 'versionName =' app/build.gradle.kts | head -n 1 | cut -d'"' -f2)
+          echo "VERSION_TAG=v${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_OUTPUT
 
-      - name: Package Windows ZIP & EXE
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path release-assets
-          Compress-Archive -Path windows-output/* -DestinationPath release-assets/BTTUNE-Windows-x64.zip -Force
-          Copy-Item windows-output/BTTUNE.exe -Destination release-assets/BTTUNE.exe -Force
-          Get-ChildItem release-assets
+      - name: Upload BTTUNE APK (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BTTUNE-release-apk
+          path: release-output/BTTUNE-release.apk
 
-      - name: Publish All to GitHub Releases
+      - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         with:
           tag_name: ${{ steps.version_step.outputs.VERSION_TAG }}
           name: "BTTUNE ${{ steps.version_step.outputs.VERSION_NAME }}"
           body: |
-            ### 🎵 BTTUNE - Modern Music Streaming for Windows
+            ### 🎵 BTTUNE - Modern Music Streaming
             
-            - **Direct Windows Native EXE**: Ultra-lightweight ~3.5 MB (`BTTUNE.exe`)
-            - **Complete Portable Package**: `BTTUNE-Windows-x64.zip`
-            - **Smart Medium-Quality Audio Cache**: 128-160kbps balanced audio caching
-            - **Liquid Glass UI**: Modern dark theme with seamless controls
+            - **Ultra-lightweight APK**: ~8.2 MB (`BTTUNE-release.apk`)
+            - **Clean UI & Liquid Experience**: Edge-to-edge UI with smart medium caching
+            - **Seamless in-app direct updates**
           draft: false
           prerelease: false
-          files: |
-            release-assets/BTTUNE.exe
-            release-assets/BTTUNE-Windows-x64.zip
+          files: release-output/BTTUNE-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
