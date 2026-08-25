@@ -31,21 +31,19 @@ jobs:
 
       - name: Extract Version
         id: version_step
-        shell: bash
+        shell: pwsh
         run: |
-          VERSION_NAME=$(grep 'versionName =' app/build.gradle.kts | head -n 1 | cut -d'"' -f2)
-          echo "VERSION_TAG=v${VERSION_NAME}" >> $GITHUB_OUTPUT
-          echo "VERSION_NAME=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          $version = Select-String -Path app/build.gradle.kts -Pattern 'versionName = "(.*)"' | ForEach-Object { $_.Matches.Groups[1].Value }
+          echo "VERSION_TAG=v$version" >> $env:GITHUB_OUTPUT
+          echo "VERSION_NAME=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Package & Publish to GitHub Releases
-        shell: bash
+      - name: Package Windows ZIP & EXE
+        shell: pwsh
         run: |
-          mkdir -p release-assets
-          cd windows-output
-          zip -r ../release-assets/BTTUNE-Windows-x64.zip ./*
-          cp BTTUNE.exe ../release-assets/BTTUNE.exe || true
-          cd ..
-          ls -lh release-assets/
+          New-Item -ItemType Directory -Force -Path release-assets
+          Compress-Archive -Path windows-output/* -DestinationPath release-assets/BTTUNE-Windows-x64.zip -Force
+          Copy-Item windows-output/BTTUNE.exe -Destination release-assets/BTTUNE.exe -Force
+          Get-ChildItem release-assets
 
       - name: Publish All to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -56,8 +54,9 @@ jobs:
           body: |
             ### 🎵 BTTUNE - Modern Music Streaming for Windows
             
-            - **Windows Native EXE**: Ultra-lightweight ~3.5 MB (`BTTUNE.exe` / `BTTUNE-Windows-x64.zip`)
-            - **Smart Medium-Quality Audio Cache**: 128-160kbps balanced audio caching for low data & fast playback
+            - **Direct Windows Native EXE**: Ultra-lightweight ~3.5 MB (`BTTUNE.exe`)
+            - **Complete Portable Package**: `BTTUNE-Windows-x64.zip`
+            - **Smart Medium-Quality Audio Cache**: 128-160kbps balanced audio caching
             - **Liquid Glass UI**: Modern dark theme with seamless controls
           draft: false
           prerelease: false
