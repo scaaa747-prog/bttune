@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p release-output
           
-          # Use primary lightweight ARM64 APK (8.2MB) as the clean single BTTUNE-release.apk
+          # Single lightweight ARM64 APK (8.2MB)
           if ls app/build/outputs/apk/release/*arm64-v8a*.apk 1> /dev/null 2>&1; then
             cp app/build/outputs/apk/release/*arm64-v8a*.apk release-output/BTTUNE-release.apk
           else
@@ -89,24 +89,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: 20
+          dotnet-version: '8.0.x'
 
-      - name: Install Desktop Dependencies
+      - name: Build Ultra-Lightweight Native Windows EXE (~3-5MB)
         working-directory: ./desktop
-        run: npm install
+        run: |
+          dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o ../windows-output
 
-      - name: Build Windows .EXE Installer & Standalone
-        working-directory: ./desktop
-        run: npm run dist
-
-      - name: Upload Windows EXE Artifacts
+      - name: Upload Windows EXE Artifact
         uses: actions/upload-artifact@v4
         with:
           name: BTTUNE-Windows-EXE
-          path: desktop/dist/BTTUNE-Setup-*.exe
+          path: |
+            windows-output/BTTUNE.exe
+            windows-output/index.html
+            windows-output/Microsoft.Web.WebView2.Core.dll
+            windows-output/Microsoft.Web.WebView2.WinForms.dll
+            windows-output/runtimes/win-x64/native/WebView2Loader.dll
 
   publish-release:
     runs-on: ubuntu-latest
@@ -126,18 +128,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: BTTUNE-Windows-EXE
-          path: release-assets
+          path: windows-pkg
 
-      - name: Rename & Organize Release Files
+      - name: Package Lightweight Windows Standalone
         run: |
-          cd release-assets
-          # Find and clean installer exe name
-          if ls BTTUNE-Setup-*.exe 1> /dev/null 2>&1; then
-            mv BTTUNE-Setup-*.exe BTTUNE-Setup.exe
-          elif ls *.exe 1> /dev/null 2>&1; then
-            mv *.exe BTTUNE-Setup.exe
-          fi
-          ls -lh
+          cd windows-pkg
+          # Create single direct ZIP for Windows (approx 3-5MB)
+          zip -r ../release-assets/BTTUNE-Windows-x64.zip ./*
+          cp BTTUNE.exe ../release-assets/BTTUNE.exe || true
+          cd ..
+          ls -lh release-assets/
 
       - name: Publish All to GitHub Releases
         uses: softprops/action-gh-release@v2
@@ -148,12 +148,13 @@ jobs:
             ### 🎵 BTTUNE - Modern Music Streaming (Android & Windows)
             
             - **Android APK**: Ultra-lightweight ~8.2 MB (`BTTUNE-release.apk`)
-            - **Windows EXE**: Setup Installer for PC (`BTTUNE-Setup.exe`) with Medium Quality Smart Audio Cache
-            - **Seamless Experience**: Same Liquid Glass UI and fast playback
+            - **Windows Native**: Ultra-lightweight ~3.5 MB (`BTTUNE.exe` / `BTTUNE-Windows-x64.zip`) with Medium Quality Smart Audio Cache
+            - **Seamless Experience**: Same Liquid Glass UI and instant playback
           draft: false
           prerelease: false
           files: |
             release-assets/BTTUNE-release.apk
-            release-assets/BTTUNE-Setup.exe
+            release-assets/BTTUNE.exe
+            release-assets/BTTUNE-Windows-x64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

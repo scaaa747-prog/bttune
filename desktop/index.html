@@ -484,6 +484,32 @@
       `).join('');
     }
 
+    // IndexedDB for universal high-performance persistent cache
+    const DB_NAME = 'BTTUNE_Music_Cache';
+    let db;
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      e.target.result.createObjectStore('audioCache', { keyPath: 'id' });
+    };
+    req.onsuccess = (e) => { db = e.target.result; };
+
+    async function getCachedAudio(id) {
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction('audioCache', 'readonly');
+        const store = tx.objectStore('audioCache');
+        const q = store.get(id);
+        q.onsuccess = () => resolve(q.result ? q.result.blob : null);
+        q.onerror = () => resolve(null);
+      });
+    }
+
+    async function saveCachedAudio(id, blob) {
+      if (!db) return;
+      const tx = db.transaction('audioCache', 'readwrite');
+      tx.objectStore('audioCache').put({ id, blob });
+    }
+
     async function playSongAtIndex(index) {
       currentSongIndex = index;
       const song = sampleSongs[index];
@@ -491,18 +517,18 @@
       document.getElementById('playerArtist').textContent = song.artist;
       document.getElementById('playerThumb').src = song.thumb;
 
-      // Smart Cache Check
-      const cachedPath = await ipcRenderer.invoke('get-cache-path', song.id);
-      if (cachedPath) {
-        audio.src = 'file://' + cachedPath;
+      // Smart Cache Check (IndexedDB)
+      const cachedBlob = await getCachedAudio(song.id);
+      if (cachedBlob) {
+        audio.src = URL.createObjectURL(cachedBlob);
         document.getElementById('cachedSongTag').style.display = 'inline-flex';
       } else {
         audio.src = song.url;
         document.getElementById('cachedSongTag').style.display = 'none';
 
-        // Background auto-cache the streamed audio
-        fetch(song.url).then(res => res.arrayBuffer()).then(buffer => {
-          ipcRenderer.invoke('save-to-cache', { songId: song.id, buffer });
+        // Background auto-cache medium bitrate audio
+        fetch(song.url).then(res => res.blob()).then(blob => {
+          saveCachedAudio(song.id, blob);
         }).catch(err => console.log('Auto-cache error:', err));
       }
 
