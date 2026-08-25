@@ -43,10 +43,32 @@ namespace BTTUNE
             var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
             await webView.EnsureCoreWebView2Async(env);
 
+            string htmlContent = "";
             string htmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "index.html");
             if (File.Exists(htmlPath))
             {
-                webView.CoreWebView2.Navigate("file:///" + htmlPath.Replace("\\", "/"));
+                htmlContent = File.ReadAllText(htmlPath);
+            }
+            else
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                foreach (string name in assembly.GetManifestResourceNames())
+                {
+                    if (name.EndsWith("index.html"))
+                    {
+                        using (Stream stream = assembly.GetManifestResourceStream(name))
+                        using (StreamReader reader = new StreamReader(stream))
+                        {
+                            htmlContent = reader.ReadToEnd();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(htmlContent))
+            {
+                webView.CoreWebView2.NavigateToString(htmlContent);
             }
             else
             {
