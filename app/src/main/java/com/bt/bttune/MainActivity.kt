@@ -476,7 +476,7 @@ class MainActivity : ComponentActivity() {
 
             var showFullscreenLyrics by remember { mutableStateOf(false) }
 
-            val playerScreenStyle by rememberEnumPreference<PlayerScreenStyle>(PlayerScreenStyleKey, defaultValue = PlayerScreenStyle.IOS_STYLED)
+            val playerScreenStyle by rememberEnumPreference<PlayerScreenStyle>(PlayerScreenStyleKey, defaultValue = PlayerScreenStyle.SPOTIFY)
             val homeScreenStyle by rememberEnumPreference(HomeScreenStyleKey, defaultValue = HomeScreenStyle.CLASSIC)
             val navBarStyle by rememberEnumPreference(NavBarStyleKey, defaultValue = NavBarStyle.APPLE)
             val enableNewLyricsScreen by rememberPreference(com.bt.bttune.constants.EnableNewLyricsScreenKey, defaultValue = true)

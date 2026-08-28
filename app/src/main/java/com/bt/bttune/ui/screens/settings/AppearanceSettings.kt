@@ -90,7 +90,7 @@ fun AppearanceSettings(
     val (playerScreenStyle, onPlayerScreenStyleChange) =
         rememberEnumPreference<PlayerScreenStyle>(
             PlayerScreenStyleKey,
-            defaultValue = PlayerScreenStyle.IOS_STYLED,
+            defaultValue = PlayerScreenStyle.SPOTIFY,
         )
     val (homeScreenStyle, onHomeScreenStyleChange) =
         rememberEnumPreference(
@@ -829,32 +829,6 @@ fun AppearanceSettings(
                 SettingsGeneralCategory(
                     title = stringResource(R.string.player),
                     items = listOf(
-                        {EnumListPreference(
-                            title = { Text(stringResource(R.string.player_screen_style)) },
-                            icon = { Icon(painterResource(R.drawable.palette), null) },
-                            selectedValue = playerScreenStyle,
-                            onValueSelected = onPlayerScreenStyleChange,
-                            valueText = {
-                                when (it) {
-                                    PlayerScreenStyle.PAPER -> stringResource(R.string.paper_player)
-                                    PlayerScreenStyle.CLASSIC -> stringResource(R.string.classic_player)
-                                    PlayerScreenStyle.MODERN -> stringResource(R.string.modern_player)
-                                    PlayerScreenStyle.SPOTIFY -> stringResource(R.string.spotify_player)
-                                    PlayerScreenStyle.LIQUID -> stringResource(R.string.liquid_player)
-                                    PlayerScreenStyle.CLOUDGLOW -> "CloudGlow"
-                                    PlayerScreenStyle.FROST -> "Frost"
-                                    PlayerScreenStyle.FOLD -> "Fold"
-                                    PlayerScreenStyle.GROOVE -> "Groove"
-                                    PlayerScreenStyle.POPSY -> "Popsy"
-                                    PlayerScreenStyle.MINIMAL -> "Minimal"
-                                    PlayerScreenStyle.COLOURFULL -> "Colourfull"
-                                    PlayerScreenStyle.APPLE -> "Apple"
-                                    PlayerScreenStyle.GALAXY -> "Galaxy"
-                                    PlayerScreenStyle.IOS_STYLED -> "IOS Styled"
-                                }
-                            },
-                        )},
-
                         *(if (playerScreenStyle == PlayerScreenStyle.COLOURFULL || playerScreenStyle == PlayerScreenStyle.APPLE || playerScreenStyle == PlayerScreenStyle.GALAXY) arrayOf(
                             { PreferenceEntry(
                                 title = { Text(stringResource(R.string.player_colour)) },
