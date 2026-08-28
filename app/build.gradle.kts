@@ -73,6 +73,8 @@ android {
     }
     signingConfigs {
         getByName("debug") {
+            v1SigningEnabled = true
+            v2SigningEnabled = true
             if (System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD") != null) {
                 storeFile = file(System.getenv("MUSIC_DEBUG_KEYSTORE_FILE"))
                 storePassword = System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD")

@@ -57,9 +57,9 @@ jobs:
         run: |
           mkdir -p release-output
           
-          # Single lightweight optimized ARM64 APK (8.2MB)
-          if ls app/build/outputs/apk/release/*arm64-v8a*.apk 1> /dev/null 2>&1; then
-            cp app/build/outputs/apk/release/*arm64-v8a*.apk release-output/BTTUNE-release.apk
+          # Universal APK compatible with all Android devices (ARM64, ARMv7, x86_64)
+          if ls app/build/outputs/apk/release/*universal*.apk 1> /dev/null 2>&1; then
+            cp app/build/outputs/apk/release/*universal*.apk release-output/BTTUNE-release.apk
           else
             cp app/build/outputs/apk/release/*.apk release-output/BTTUNE-release.apk
           fi
