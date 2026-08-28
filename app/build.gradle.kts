@@ -75,10 +75,16 @@ android {
         getByName("debug") {
             isV1SigningEnabled = true
             isV2SigningEnabled = true
-            if (System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD") != null) {
+            val keystoreFile = file("bttune.keystore")
+            if (keystoreFile.exists()) {
+                storeFile = keystoreFile
+                storePassword = "bttuneapppass"
+                keyAlias = "bttune"
+                keyPassword = "bttuneapppass"
+            } else if (System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD") != null) {
                 storeFile = file(System.getenv("MUSIC_DEBUG_KEYSTORE_FILE"))
                 storePassword = System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD")
-                keyAlias = "debug"
+                keyAlias = "bttune"
                 keyPassword = System.getenv("MUSIC_DEBUG_SIGNING_KEY_PASSWORD")
             }
         }

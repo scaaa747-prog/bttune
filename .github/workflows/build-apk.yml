@@ -33,23 +33,7 @@ jobs:
       - name: Grant Execute Permission for Gradlew
         run: chmod +x gradlew
 
-      - name: Create Consistent Release Keystore
-        run: |
-          keytool -genkey -v \
-            -keystore app/bttune.keystore \
-            -alias debug \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass bttuneapppass \
-            -keypass bttuneapppass \
-            -dname "CN=BTTUNE, OU=Music, O=BTTUNE, L=City, ST=State, C=IN"
-
       - name: Build Release APK
-        env:
-          MUSIC_DEBUG_SIGNING_STORE_PASSWORD: "bttuneapppass"
-          MUSIC_DEBUG_KEYSTORE_FILE: "bttune.keystore"
-          MUSIC_DEBUG_SIGNING_KEY_PASSWORD: "bttuneapppass"
         run: ./gradlew assembleRelease --build-cache --parallel --no-daemon
 
       - name: Prepare Single Clean Release APK
