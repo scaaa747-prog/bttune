@@ -36,7 +36,7 @@ class DiscordRPC(
             smallText = song.artists.firstOrNull()?.name,
             buttons = listOf(
                 "Listen on YouTube Music" to "https://play.bttune.app/song?id=${song.song.id}",
-                "Visit BTTUNE" to "https://github.com/scaaa747-prog/test"
+                "Visit BTTUNE" to "https://github.com/scaaa747-prog/bttune"
             ),
             type = Type.LISTENING,
             statusDisplayType = if (useDetails) StatusDisplayType.DETAILS else StatusDisplayType.STATE,

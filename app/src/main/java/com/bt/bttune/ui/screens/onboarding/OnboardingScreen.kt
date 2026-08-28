@@ -70,7 +70,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 private const val PRIMARY_VIDEO_URL = "https://database.airbeats.net/login_bg_video.mp4"
-private const val FALLBACK_VIDEO_URL = "https://raw.githubusercontent.com/scaaa747-prog/test/main/assets/login_bg_video.mp4"
+private const val FALLBACK_VIDEO_URL = "https://raw.githubusercontent.com/scaaa747-prog/bttune/main/assets/login_bg_video.mp4"
 
 enum class SyncState {
     IDLE,

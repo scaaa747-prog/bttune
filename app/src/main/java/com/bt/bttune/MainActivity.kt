@@ -1802,7 +1802,7 @@ private fun openNotificationSettings(context: Context) {
 
 suspend fun checkForUpdates(): String? = withContext(Dispatchers.IO) {
     try {
-        val url = URL("https://api.github.com/repos/scaaa747-prog/test/releases/latest")
+        val url = URL("https://api.github.com/repos/scaaa747-prog/bttune/releases/latest")
         val connection = (url.openConnection() as java.net.HttpURLConnection).apply {
             setRequestProperty("User-Agent", "BTTUNE-App")
             connectTimeout = 10000

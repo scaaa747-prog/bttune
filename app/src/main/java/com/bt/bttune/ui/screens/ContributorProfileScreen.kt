@@ -71,7 +71,7 @@ fun ContributorProfileScreen(
         launch { profile = client.getUserProfile(username) }
         launch { repos = client.getUserRepos(username) }
         launch { events = client.getUserEvents(username) }
-        launch { commits = client.getRepoCommits("scaaa747-prog", "test", username) }
+        launch { commits = client.getRepoCommits("scaaa747-prog", "bttune", username) }
         launch { readme = client.getProfileReadme(username) }
         isLoading = false
     }

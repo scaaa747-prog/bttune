@@ -165,7 +165,7 @@ fun ChangelogScreen(viewModel: ChangelogViewModel = viewModel()) {
     var selectedTab by remember { mutableStateOf(ChangelogTab.RELEASES) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadChangelog("scaaa747-prog", "test")
+        viewModel.loadChangelog("scaaa747-prog", "bttune")
     }
 
     Column(
@@ -194,7 +194,7 @@ fun ChangelogScreen(viewModel: ChangelogViewModel = viewModel()) {
                     isLoading = uiState.isLoadingReleases,
                     error = uiState.releasesError,
                     lastUpdated = uiState.lastUpdated,
-                    onRetry = { viewModel.loadChangelog("scaaa747-prog", "test") }
+                    onRetry = { viewModel.loadChangelog("scaaa747-prog", "bttune") }
                 )
             }
 
@@ -204,7 +204,7 @@ fun ChangelogScreen(viewModel: ChangelogViewModel = viewModel()) {
                     isLoading = uiState.isLoadingCommits,
                     error = uiState.commitsError,
                     lastUpdated = uiState.lastUpdated,
-                    onRetry = { viewModel.loadChangelog("scaaa747-prog", "test") }
+                    onRetry = { viewModel.loadChangelog("scaaa747-prog", "bttune") }
                 )
             }
         }
