@@ -45,7 +45,7 @@ android {
         buildConfigField("String", "AUTH_API_BASE_URL", authBaseUrl.asBuildConfigString())
         
         // Strip out language resources from libraries that the app doesn't support
-        resConfigs("en")
+        resourceConfigurations += "en"
     }
 
     buildTypes {
@@ -73,8 +73,8 @@ android {
     }
     signingConfigs {
         getByName("debug") {
-            v1SigningEnabled = true
-            v2SigningEnabled = true
+            isV1SigningEnabled = true
+            isV2SigningEnabled = true
             if (System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD") != null) {
                 storeFile = file(System.getenv("MUSIC_DEBUG_KEYSTORE_FILE"))
                 storePassword = System.getenv("MUSIC_DEBUG_SIGNING_STORE_PASSWORD")
